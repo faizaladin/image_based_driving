@@ -83,9 +83,21 @@ def main():
         avg_val_loss = val_loss/len(val_loader)
         print(f"Epoch [{epoch+1}/{EPOCHS}] Validation Loss: {avg_val_loss:.4f}")
         wandb.log({"val/loss": avg_val_loss, "epoch": epoch+1})
-        # Save model every epoch
-        torch.save(model.state_dict(), f'driving_model_epoch_{epoch+1}.pth')
-        wandb.save(f'driving_model.pth')
+
+        # Log a random image from the validation set every epoch
+        rand_idx = np.random.randint(len(val_dataset))
+        img, label = val_dataset[rand_idx]
+        model.eval()
+        with torch.no_grad():
+            img_input = img.unsqueeze(0).to(DEVICE)
+            pred = model(img_input).cpu().item()
+        img_np = img.cpu().numpy().transpose(1, 2, 0)
+        wandb.log({
+            "val/random_image": [wandb.Image(img_np, caption=f"Label: {label.item():.3f}, Pred: {pred:.3f}")],
+            "val/random_label": label.item(),
+            "val/random_pred": pred,
+            "epoch": epoch+1
+        })
         model.train()
 
     # Save final model
