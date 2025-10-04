@@ -113,11 +113,11 @@ def main():
             "val/random_pred": pred,
             "epoch": epoch+1
         })
-        torch.save(model.state_dict(), 'driving_model.pth')
+        torch.save(model.state_dict(), 'driving_model_Town02.pth')
         model.train()
 
     # Save final model
-    torch.save(model.state_dict(), 'driving_model.pth')
+    torch.save(model.state_dict(), 'driving_model_Town02.pth')
     print("Training complete. Model saved as driving_model.pth")
 
 if __name__ == "__main__":
