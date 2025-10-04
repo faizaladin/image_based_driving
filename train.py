@@ -26,9 +26,9 @@ def main():
 
     # Define per-town sample counts (edit as needed)
     samples_per_town = {
-        "Town01": 737,
-        "Town02": 1276,
-        "Town03": 1308
+        "Town02": 737,
+        "Town03": 1276,
+        "Town04": 1308
         # Add more towns as needed
     }
     # Create full dataset with per-town sampling
@@ -121,9 +121,8 @@ def main():
         model.train()
 
     # Save final model
-    torch.save(model.state_dict(), 'driving_model.pth')
-    wandb.save('driving_model.pth')
-    print("Training complete. Model saved as driving_model.pth")
+    torch.save(model.state_dict(), 'town2_3_4.pth')
+    print("Training complete. Model saved as town2_3_4.pth")
 
 if __name__ == "__main__":
     main()
