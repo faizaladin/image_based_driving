@@ -36,7 +36,7 @@ class Driving(nn.Module):
         return x.squeeze(1)
 
 # Example usage:
-model = Driving()
-img = torch.randn(1, 3, 300, 400)
-out = model(img)
-print(out)
+# model = Driving()
+# img = torch.randn(1, 3, 300, 400)
+# out = model(img)
+# print(out)

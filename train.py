@@ -8,7 +8,7 @@ import numpy as np
 
 # Training settings
 BATCH_SIZE = 128
-EPOCHS = 5000
+EPOCHS = 1500
 LR = 1e-4
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -25,11 +25,14 @@ def main():
     val_transform = transforms.ToTensor()
 
     # Define per-town sample counts (edit as needed)
+    # samples_per_town = {
+    #     "Town02": 736,
+    #     "Town03": 1276,
+    #     "Town04": 1308
+    #     # Add more towns as needed
+    # }
     samples_per_town = {
-        "Town02": 736,
-        "Town03": 1276,
-        "Town04": 1308
-        # Add more towns as needed
+        "Town02": 3800
     }
     # Create full dataset with per-town sampling
     full_dataset = CarlaSteeringPerTownSamplesDataset('./', samples_per_town, transform=None)
@@ -116,11 +119,12 @@ def main():
             "val/random_pred": pred,
             "epoch": epoch+1
         })
-        torch.save(model.state_dict(), 'driving_model.pth')
+        torch.save(model.state_dict(), 'driving_model_Town02.pth')
+        print("Checkpoint saved: driving_model_Town02.pth")
         model.train()
 
     # Save final model
-    torch.save(model.state_dict(), 'driving_model.pth')
+    torch.save(model.state_dict(), 'driving_model_Town02.pth')
     print("Training complete. Model saved as driving_model.pth")
 
 if __name__ == "__main__":
