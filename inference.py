@@ -26,7 +26,7 @@ from model import Driving # Assumes your model class is in model.py
 # --- Configuration ---
 HOST = 'localhost'
 PORT = 2000
-MODEL_PATH = 'driving_model.pth'
+MODEL_PATH = 'town2_3_4_heavy_nd.pth'
 IMAGE_WIDTH = 400
 IMAGE_HEIGHT = 300
 STEERING_SCALING_FACTOR = 100.0
@@ -119,7 +119,7 @@ def main():
         vehicle_bp = blueprint_library.find('vehicle.tesla.model3')
         # Use a later spawn point (e.g., index 10) to start further down the road
         spawn_points = world.get_map().get_spawn_points()
-        spawn_point = spawn_points[20] if len(spawn_points) > 25 else spawn_points[-1]
+        spawn_point = spawn_points[40] if len(spawn_points) > 10 else spawn_points[-1]
         vehicle = world.spawn_actor(vehicle_bp, spawn_point)
         camera_bp = blueprint_library.find('sensor.camera.rgb')
         camera_bp.set_attribute('image_size_x', str(IMAGE_WIDTH))
