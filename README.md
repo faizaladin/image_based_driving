@@ -10,7 +10,7 @@ CARLA 9.14
 
 1. Install the Conda Environment
 <pre>conda env create -f environment.yml
-  conda activate myenv
+conda activate myenv
 </pre>
 
 2. We will need to collect data from CARLA for the training process.
