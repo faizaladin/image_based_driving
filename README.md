@@ -5,7 +5,8 @@ This repository trains a model on various maps in the CARLA simulator to return 
 
 ## How To Use
 You will need the following pre requirements:
-Ubuntu 20.04
+
+Ubuntu 20.04,
 CARLA 9.14
 
 1. Install the Conda Environment
