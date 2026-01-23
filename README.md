@@ -34,5 +34,5 @@ conda activate myenv
 ## Results
 Here are some video examples to show the model's capabilities. 
 
-![Town 2 Sunny](assets/town2_sunny.gif)
+![Town 2 Sunny](assets/town2_sunny.gif)![Town 2 Rainy](assets/town2_rainy.gif)
 
