@@ -5,12 +5,8 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
-# Dataset that takes a dict of {town: num_samples} and loads the first N frames for each town
 class CarlaSteeringPerTownSamplesDataset(torch.utils.data.Dataset):
     def __init__(self, data_root, samples_per_town, transform=None):
-        """
-        samples_per_town: dict mapping town name to number of frames to take (first N, not random)
-        """
         self.data = []
         self.transform = transform
         for town in os.listdir(data_root):
@@ -27,7 +23,6 @@ class CarlaSteeringPerTownSamplesDataset(torch.utils.data.Dataset):
                     frame_path = os.path.join(town_path, f"{frame}.png")
                     if os.path.isfile(frame_path):
                         frames.append((frame_path, steer, frame))
-            # Sort by frame 
             try:
                 frames.sort(key=lambda x: int(x[2]))
             except Exception:
@@ -83,7 +78,6 @@ class CarlaSteeringDataset(Dataset):
     def __init__(self, data_root, max_samples=1500, transform=None):
         from torchvision import transforms
         self.data = []
-        # If no transform is provided, use ToTensor by default
         if transform is None:
             self.transform = transforms.ToTensor()
         else:
