@@ -11,7 +11,6 @@ import subprocess
 import csv
 import shutil
 
-# --- Find and Add CARLA .egg to Python Path ---
 try:
     CARLA_ROOT = "/home/faizaladin/Desktop/carla" # Update this path if needed
     dist_path = os.path.join(CARLA_ROOT, 'PythonAPI/carla/dist')
@@ -19,13 +18,12 @@ try:
     if not egg_files: raise IndexError
     sys.path.append(egg_files[0])
 except IndexError:
-    print("❌ Could not find a compatible CARLA .egg file.")
+    print("Could not find CARLA .egg file.")
     sys.exit()
 
 import carla
-from model import Driving # Assumes your model class is in model.py
+from model import Driving 
 
-# --- Configuration ---
 HOST = 'localhost'
 PORT = 2000
 MODEL_PATH = 'town4.pth'
@@ -40,7 +38,7 @@ def restart_simulator():
     """Kills any running CARLA processes and starts a new one in the background."""
     print("Killing existing Carla processes...")
     os.system("pkill -f CarlaUE4-Linux-Shipping")
-    time.sleep(5)  # Allow time for system ports to be released
+    time.sleep(5)
 
     print("Starting new Carla simulator instance...")
     env = os.environ.copy()
@@ -82,7 +80,6 @@ def main():
     original_settings = None
 
     try:
-        # --- Data organization setup ---
         base_dir = "/media/faizaladin/vlm_data/town4_sunny"
         ensure_dirs(base_dir)
         csv_path = os.path.join(base_dir, "run_log.csv")
@@ -92,17 +89,14 @@ def main():
                 writer = csv.writer(f)
                 writer.writerow(["run_id", "violation", "violation_time", "collision_object"])
 
-        # --- 0. Start the Simulator ---
         restart_simulator()
 
-        # --- 1. Load Model ---
         print(f"Loading model from {MODEL_PATH} on device {DEVICE}...")
         model = Driving().to(DEVICE)
         model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
         model.eval()
-        print("✅ Model loaded successfully.")
+        print("Model loaded successfully.")
 
-        # --- 2. Connect to CARLA with Retries ---
         for i in range(10): 
             try:
                 print(f"Attempting to connect to CARLA (Attempt {i+1}/10)...")
@@ -110,37 +104,32 @@ def main():
                 client.set_timeout(10.0)
                 print("Loading Town02...")
                 world = client.load_world('Town04')
-                print("✅ CARLA connection successful and Town02 loaded.")
+                print("CARLA connection successful.")
                 break
             except RuntimeError as e:
-                print(f"Connection failed: {e}. Retrying in 5 seconds...")
+                print(f"Connection failed: {e}.")
                 time.sleep(5)
         
         if not world:
-            raise RuntimeError("❌ Could not connect to CARLA after multiple attempts.")
+            raise RuntimeError("Could not connect to CARLA.")
 
-        # --- 3. Set Synchronous Mode ---
         original_settings = world.get_settings()
         settings = world.get_settings()
         settings.synchronous_mode = True
         settings.fixed_delta_seconds = FIXED_DELTA_SECONDS
         world.apply_settings(settings)
-        print(f"✅ CARLA set to synchronous mode with dt={FIXED_DELTA_SECONDS}s (10 FPS).")
 
         #world.set_weather(carla.WeatherParameters.SoftRainNoon)
 
-        # --- 4. Spawn Vehicle and Camera ---
         blueprint_library = world.get_blueprint_library()
         vehicle_bp = blueprint_library.find('vehicle.tesla.model3')
         spawn_points = world.get_map().get_spawn_points()
         print(f"Total spawn points: {len(spawn_points)}")
 
-        target_speed = 6.0  # m/s (about 28.8 km/h)
+        target_speed = 6.0  
 
-        # --- Loop over all spawn points ---
         for idx, spawn_point in enumerate(spawn_points):
             print(f"\n=== Starting run {idx+1} at spawn point {idx} ===")
-            # Clean up previous actors
             vehicle = None
             camera = None
             collision_sensor = None
@@ -172,13 +161,11 @@ def main():
             camera.listen(image_queue.put)
             world.tick()
 
-            # --- Video writer ---
             video_width = camera_bp.get_attribute('image_size_x').as_int()
             video_height = camera_bp.get_attribute('image_size_y').as_int()
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             max_frames = int(8 / FIXED_DELTA_SECONDS)
-
-            # Run number logic
+            
             try:
                 with open(csv_path, "r") as f:
                     reader = csv.reader(f)
@@ -200,7 +187,6 @@ def main():
                     world.tick()
                     image = image_queue.get()
 
-                    # Start timer when car first moves (speed > 0.5 m/s)
                     if start_frame is None:
                         velocity = vehicle.get_velocity()
                         speed = np.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
@@ -222,7 +208,7 @@ def main():
                     control = carla.VehicleControl(throttle=throttle, steer=predicted_steer)
                     vehicle.apply_control(control)
 
-                    # Lane violation detection (ignore junctions)
+                    # Lane violation detection
                     if start_frame is not None:
                         vehicle_location = vehicle.get_location()
                         waypoint = world.get_map().get_waypoint(vehicle_location, project_to_road=True, lane_type=carla.LaneType.Driving)
@@ -263,30 +249,24 @@ def main():
                         violation_type = "collision"
                         violation_time = crash_time
                         violation_object = collision_object
-                        print(f"\n❌ Car crashed! First collision at {crash_time} seconds after car started moving.")
                         print(f"   Object collided with: {collision_object}")
                     elif first_lane_violation_time is not None:
                         violation_type = "lane violation"
                         violation_time = f"{first_lane_violation_time:.2f}"
                         violation_object = ""
-                        print(f"\n🚨 Lane violation at {violation_time} seconds after car started moving.")
                     else:
                         violation_type = ""
                         violation_time = ""
                         violation_object = ""
-                        print("\n✅ No violation during the 8 second trajectory.")
                 elif first_lane_violation_time is not None:
                     violation_type = "lane violation"
                     violation_time = f"{first_lane_violation_time:.2f}"
                     violation_object = ""
-                    print(f"\n🚨 Lane violation at {violation_time} seconds after car started moving.")
                 else:
                     violation_type = ""
                     violation_time = ""
                     violation_object = ""
-                    print("\n✅ No violation during the 8 second trajectory.")
 
-                # Move video to correct folder
                 if violation_type == "collision":
                     dest_folder = os.path.join(base_dir, "collision")
                 elif violation_type == "lane violation":
@@ -301,7 +281,7 @@ def main():
                     writer = csv.writer(f)
                     writer.writerow([run_number, violation_type, violation_time, violation_object])
 
-                # Cleanup actors for next run
+                # Cleanup actors
                 if camera is not None:
                     camera.destroy()
                 if vehicle is not None:
