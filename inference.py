@@ -9,9 +9,8 @@ import cv2
 import torch
 import subprocess
 
-# --- Find and Add CARLA .egg to Python Path ---
 try:
-    CARLA_ROOT = "/home/faizaladin/Desktop/carla" # Update this path if needed
+    CARLA_ROOT = "/home/faizaladin/Desktop/carla" 
     dist_path = os.path.join(CARLA_ROOT, 'PythonAPI/carla/dist')
     egg_files = glob.glob(f'{dist_path}/carla-*-py{sys.version_info.major}.{sys.version_info.minor}-*.egg')
     if not egg_files: raise IndexError
@@ -21,9 +20,8 @@ except IndexError:
     sys.exit()
 
 import carla
-from model import Driving # Assumes your model class is in model.py
+from model import Driving 
 
-# --- Configuration ---
 HOST = 'localhost'
 PORT = 2000
 MODEL_PATH = 'town3.pth'
@@ -38,14 +36,12 @@ def restart_simulator():
     """Kills any running CARLA processes and starts a new one in the background."""
     print("Killing existing Carla processes...")
     os.system("pkill -f CarlaUE4-Linux-Shipping")
-    time.sleep(5)  # Allow time for system ports to be released
+    time.sleep(5) 
 
     print("Starting new Carla simulator instance...")
     env = os.environ.copy()
-    # This environment variable might be specific to your system for Vulkan rendering
     env["VK_ICD_FILENAMES"] = "/usr/share/vulkan/icd.d/nvidia_icd.json"
     
-    # Run the simulator in the background and suppress its output
     subprocess.Popen(
         [CARLA_EXECUTABLE, "-RenderOffScreen"],
         env=env,
@@ -70,7 +66,6 @@ def preprocess_image(carla_image):
     return img_tensor
 
 def main():
-    # Initialize all variables to None to prevent UnboundLocalError on cleanup
     client = None
     world = None
     vehicle = None
@@ -78,18 +73,14 @@ def main():
     original_settings = None
 
     try:
-        # --- 0. Start the Simulator ---
         restart_simulator()
 
-        # --- 1. Load Model ---
         print(f"Loading model from {MODEL_PATH} on device {DEVICE}...")
         model = Driving().to(DEVICE)
         model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
         model.eval()
-        print("✅ Model loaded successfully.")
+        print("Model loaded successfully.")
 
-        # --- 2. Connect to CARLA with Retries ---
-        # The retry loop is still useful in case the simulator takes longer than 20s
         for i in range(10): 
             try:
                 print(f"Attempting to connect to CARLA (Attempt {i+1}/10)...")
@@ -97,22 +88,21 @@ def main():
                 client.set_timeout(10.0)
                 print("Loading Town02...")
                 world = client.load_world('Town03')
-                print("✅ CARLA connection successful and Town02 loaded.")
-                break # Exit the loop on successful connection
+                print("CARLA connection sucess")
+                break
             except RuntimeError as e:
                 print(f"Connection failed: {e}. Retrying in 5 seconds...")
                 time.sleep(5)
         
         if not world:
-            raise RuntimeError("❌ Could not connect to CARLA after multiple attempts.")
+            raise RuntimeError("Could not connect to CARLA.")
 
-        # --- 3. Set Synchronous Mode ---
         original_settings = world.get_settings()
         settings = world.get_settings()
         settings.synchronous_mode = True
         settings.fixed_delta_seconds = FIXED_DELTA_SECONDS
         world.apply_settings(settings)
-        print(f"✅ CARLA set to synchronous mode with dt={FIXED_DELTA_SECONDS}s (10 FPS).")
+        print(f"CARLA set to synchronous mode with dt={FIXED_DELTA_SECONDS}s (10 FPS).")
 
         weather = carla.WeatherParameters(
             cloudiness=60.0,
@@ -127,10 +117,8 @@ def main():
         )
         #world.set_weather(carla.WeatherParameters.SoftRainNoon)
         
-        # --- 4. Spawn Vehicle and Camera ---
         blueprint_library = world.get_blueprint_library()
         vehicle_bp = blueprint_library.find('vehicle.tesla.model3')
-        # Use a later spawn point (e.g., index 10) to start further down the road
         spawn_points = world.get_map().get_spawn_points()
         spawn_point = spawn_points[40] if len(spawn_points) > 10 else spawn_points[-1]
         vehicle = world.spawn_actor(vehicle_bp, spawn_point)
@@ -143,16 +131,15 @@ def main():
         image_queue = queue.Queue()
         camera.listen(image_queue.put)
         
-        world.tick() # Initial tick to get the first frame
+        world.tick() 
         print("🚀 Starting inference loop. Press Ctrl+C to exit.")
 
-        # --- 5. Real-time Inference and Control Loop ---
-        target_speed = 6.0  # m/s (about 28.8 km/h)
+        target_speed = 6.0 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter('carla_inference_recording.mp4', fourcc, 10, (IMAGE_WIDTH, IMAGE_HEIGHT))
         try:
             while True:
-                world.tick() # Advance the simulation by one step
+                world.tick() 
                 image = image_queue.get()
                 image_tensor = preprocess_image(image)
                 with torch.no_grad():
@@ -163,7 +150,7 @@ def main():
                 velocity = vehicle.get_velocity()
                 speed = np.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
                 speed_error = target_speed - speed
-                # Simple proportional controller for throttle
+                # proportional controller for throttle
                 throttle = 0.4 + 0.1 * speed_error
                 throttle = max(0.0, min(1.0, throttle))
 
@@ -187,12 +174,10 @@ def main():
             out.release()
 
     finally:
-        # --- 6. Cleanup ---
         print("\nCleaning up actors and restoring settings...")
         if world is not None and original_settings is not None:
             world.apply_settings(original_settings)
         
-        # Safely destroy actors if they were created
         if camera is not None:
             camera.destroy()
         if vehicle is not None:
