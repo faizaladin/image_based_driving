@@ -31,6 +31,11 @@ conda activate myenv
 <pre>python inference.py
 </pre>
 
+5. To collect trajectory data:
+<pre>
+  python vlm_data.py
+</pre>
+
 ## Results
 Here are some video examples to show the model's capabilities between sunny and rainy weathers.
 
