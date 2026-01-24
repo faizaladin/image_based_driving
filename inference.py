@@ -16,7 +16,7 @@ try:
     if not egg_files: raise IndexError
     sys.path.append(egg_files[0])
 except IndexError:
-    print("❌ Could not find a compatible CARLA .egg file.")
+    print("Could not find .egg file.")
     sys.exit()
 
 import carla
