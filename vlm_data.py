@@ -12,7 +12,7 @@ import csv
 import shutil
 
 try:
-    CARLA_ROOT = "/home/faizaladin/Desktop/carla" # Update this path if needed
+    CARLA_ROOT = "/home/faizaladin/Desktop/carla" 
     dist_path = os.path.join(CARLA_ROOT, 'PythonAPI/carla/dist')
     egg_files = glob.glob(f'{dist_path}/carla-*-py{sys.version_info.major}.{sys.version_info.minor}-*.egg')
     if not egg_files: raise IndexError
