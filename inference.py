@@ -132,7 +132,6 @@ def main():
         camera.listen(image_queue.put)
         
         world.tick() 
-        print("🚀 Starting inference loop. Press Ctrl+C to exit.")
 
         target_speed = 6.0 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
