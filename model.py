@@ -5,13 +5,12 @@ import torch.nn.functional as F
 class Driving(nn.Module):
     def __init__(self):
         super(Driving, self).__init__()
-        # For 3x300x400 input, add padding to keep more spatial info
+        # 3x300x400 input
         self.conv1 = nn.Conv2d(3, 24, kernel_size=5, stride=2, padding=2)
         self.conv2 = nn.Conv2d(24, 36, kernel_size=5, stride=2, padding=2)
         self.conv3 = nn.Conv2d(36, 48, kernel_size=5, stride=2, padding=2)
         self.conv4 = nn.Conv2d(48, 64, kernel_size=3, padding=1)
         self.conv5 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        # Output after conv layers: (batch, 64, 38, 50)
         self.fc1 = nn.Linear(64*38*50, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
@@ -28,11 +27,6 @@ class Driving(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
-        x = torch.tanh(self.fc4(x))  # Output in [-1, 1]
+        x = torch.tanh(self.fc4(x)) 
         return x.squeeze(1)
 
-# Example usage:
-# model = Driving()
-# img = torch.randn(1, 3, 300, 400)
-# out = model(img)
-# print(out)
