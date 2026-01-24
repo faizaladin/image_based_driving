@@ -33,7 +33,7 @@ conda activate myenv
 
 5. To collect trajectory data:
 <pre>
-  python vlm_data.py
+python vlm_data.py
 </pre>
 
 ## Results
